@@ -1,0 +1,16 @@
+{
+  "id": "2318826",
+  "name": "test",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "17536795",
+      "name": "tex",
+      "font_class": "tex3-copy",
+      "unicode": "e8ff",
+      "unicode_decimal": 59647
+    }
+  ]
+}
