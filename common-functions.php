@@ -303,6 +303,55 @@ function tex2md($tex,$convertsion_path=null){
     }
 }
 
+function tex2svg($string){
+        if(!$conversion_path){$conversion_path=get_conversion_path();}
+        array_map('unlink',glob($conversion_path.'*'));
+
+        $file_name="file.tex";
+        $file= fopen($conversion_path.$file_name,"w") or die("Unable to open file!");
+
+        $before=<<<BeforeTeXContent
+        \documentclass[dvisvgm]{article}
+        \usepackage[active,tightpage]{preview}
+        \usepackage{tikz-cd}
+        \usepackage{amsmath}
+        \begin{document}
+        \begin{preview}
+        
+        BeforeTeXContent;
+
+        $after=<<<afterTeXContent
+        \\end{preview}
+        \\end{document}
+        
+        afterTeXContent;
+
+        $string=$before.$string.$after;
+        fwrite($file, $string);
+        fclose($file);
+  
+        $command="export PATH=$PATH:/usr/bin;cd $conversion_path ;latex -interaction=nonstopmode $file_name ;dvisvgm file.dvi --no-fonts --bbox=preview --page=1-  2>&1";
+        exec($command,$output);
+        //var_dump($output);
+    
+        $files=glob($conversion_path."*.svg");
+        $content='';
+        foreach($files as $file){
+            $file_size=filesize($file);
+            $file_r = fopen($file, "r") or die("Unable to open file!");
+
+            $content .= fread($file_r, $file_size);
+            fclose($file_r);
+        }
+
+        //array_map('unlink',glob($conversion_path.'*'));
+        if($content) {
+            return $content;
+        }else{
+            return $output;
+        }
+}
+
 $escape=array();
 $temporary_string="ImATemporaryStringToBeReplaced";
 $index=-1;
@@ -652,8 +701,30 @@ function content_filter($content){
         update_post_html($post_id);
         $html=get_post_meta($post_id,'html',true);
     }
-    remove_filter('the_content', 'wpautop');
+    $html.=tex2svg('$a^2$');
+    $path=plugin_dir_path(__FILE__)."library/tex2svg/tex-svg/";  
+    $tex_svg="export PATH=$PATH:/usr/bin;cd $path; node tex-svg.mjs 2>&1";
 
+    $process=exec($tex_svg,$output);
+    //$promise= $output[1];
+    //sleep(3);
+    //$html=$html.implode(',',$svg);
+    $my_dir=plugin_dir_path(__FILE__)."data/tmpdir/";
+    $files = glob($my_dir . '*.svg');
+    foreach($files as $file){
+                    $file_size=filesize($file);
+                    $file_r = fopen($file, "r") or die("Unable to open file!");
+                    $svg= fread($file_r, $file_size);
+                    //$content=tex2md_filter($content);
+                    fclose($file_r);
+                    $html=$html.$svg;
+    }
+   //echo 
+
+//$html.=var_dump($output);
+//pclose($process);
+
+    remove_filter('the_content', 'wpautop');
     return $html;
     } else{
         return $content;
